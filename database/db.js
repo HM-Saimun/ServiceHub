@@ -97,6 +97,63 @@ db.serialize(() => {
         FOREIGN KEY (service_id) REFERENCES services(id)
     )`);
 
+    // Provider-specific tables
+    db.run(`CREATE TABLE IF NOT EXISTS provider_details (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER UNIQUE,
+        clerk_user_id TEXT UNIQUE,
+        skills TEXT,
+        hourly_rate REAL,
+        bio TEXT,
+        certifications TEXT,
+        years_experience INTEGER DEFAULT 0,
+        total_rating REAL DEFAULT 0,
+        total_reviews INTEGER DEFAULT 0,
+        completed_jobs INTEGER DEFAULT 0,
+        is_verified INTEGER DEFAULT 0,
+        profile_image_url TEXT,
+        service_categories TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id)
+    )`);
+
+    db.run(`CREATE TABLE IF NOT EXISTS provider_earnings (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        provider_id INTEGER,
+        booking_id INTEGER,
+        amount REAL,
+        status TEXT DEFAULT 'completed',
+        description TEXT,
+        transaction_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (provider_id) REFERENCES users(id),
+        FOREIGN KEY (booking_id) REFERENCES bookings(id)
+    )`);
+
+    db.run(`CREATE TABLE IF NOT EXISTS provider_ratings (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        provider_id INTEGER,
+        booking_id INTEGER,
+        customer_id INTEGER,
+        rating INTEGER,
+        review_text TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (provider_id) REFERENCES users(id),
+        FOREIGN KEY (booking_id) REFERENCES bookings(id),
+        FOREIGN KEY (customer_id) REFERENCES users(id)
+    )`);
+
+    db.run(`CREATE TABLE IF NOT EXISTS provider_availability (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        provider_id INTEGER,
+        day_of_week TEXT,
+        start_time TEXT,
+        end_time TEXT,
+        is_available INTEGER DEFAULT 1,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (provider_id) REFERENCES users(id)
+    )`);
+
     addColumn('users', 'clerk_user_id', 'TEXT');
     addColumn('users', 'password_hash', 'TEXT');
     addColumn('users', 'email_verified', 'INTEGER DEFAULT 0');
@@ -106,6 +163,7 @@ db.serialize(() => {
     addColumn('users', 'role', "TEXT DEFAULT 'user'");
     addColumn('users', 'created_at', 'DATETIME');
     addColumn('users', 'updated_at', 'DATETIME');
+    addColumn('users', 'provider_status', "TEXT DEFAULT 'inactive'");
 
     addColumn('bookings', 'user_id', 'INTEGER');
     addColumn('bookings', 'clerk_user_id', 'TEXT');
@@ -118,6 +176,13 @@ db.serialize(() => {
     createIndex('idx_users_clerk_user_id', 'users', 'clerk_user_id', true);
     createIndex('idx_bookings_clerk_user_id', 'bookings', 'clerk_user_id');
     createIndex('idx_service_providers_clerk_user_id', 'serviceProviders', 'clerk_user_id');
+    
+    // Indexes for provider tables
+    createIndex('idx_provider_details_user_id', 'provider_details', 'user_id', true);
+    createIndex('idx_provider_details_clerk_user_id', 'provider_details', 'clerk_user_id', true);
+    createIndex('idx_provider_earnings_provider_id', 'provider_earnings', 'provider_id');
+    createIndex('idx_provider_ratings_provider_id', 'provider_ratings', 'provider_id');
+    createIndex('idx_provider_availability_provider_id', 'provider_availability', 'provider_id');
 });
 
 module.exports = db;
